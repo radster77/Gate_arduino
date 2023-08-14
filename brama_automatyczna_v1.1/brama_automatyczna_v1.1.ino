@@ -1,6 +1,7 @@
-// AUTOMATIC GATE BY RN V.1
+// AUTOMATIC GATE BY RN V.1.2
 
-#define operationTime 20000
+#define operationTime 23000
+#define buttonPressedTime 20
 
 int buttonA = 2;
 int buttonB = 3;
@@ -10,9 +11,15 @@ int buttonD = 5;
 int output1 = 7;
 int output2 = 8;
 int state = 5;
-unsigned long currentTime = millis();
+unsigned long currentTime = 0;
+//unsigned long currentTime = millis();
 unsigned long lastTime = 0;
 unsigned long timer = 0;
+
+int buttonAState = digitalRead(buttonA);
+int buttonBState = digitalRead(buttonB);
+int buttonCState = digitalRead(buttonC);
+int buttonDState = digitalRead(buttonD);
 
 void setup() 
 {
@@ -25,16 +32,29 @@ Serial.begin(9600);
 
 void loop()
 {
-int buttonAState = digitalRead(buttonA);
-int buttonBState = digitalRead(buttonB);
-int buttonCState = digitalRead(buttonC);
-int buttonDState = digitalRead(buttonD);
 
-  
-   if (buttonAState == HIGH)//OPEN
+   if (buttonAState == HIGH)    //OPEN
   {
-    state = 1;
-  } 
+    
+    currentTime = millis();
+    lastTime = currentTime;
+    timer = currentTime - lastTime;
+    
+            while (timer < buttonPressedTime ) 
+             {
+                   currentTime = millis();
+                   timer = currentTime - lastTime;
+             }
+             if (buttonAState == HIGH)
+                     {
+                       state = 1;
+                     }
+             else
+                     {
+                      state=5;
+                     }
+  
+  }
   else if (buttonBState == HIGH)//CLOSE
   {
     state = 2;
@@ -61,9 +81,11 @@ void gateOperation(int buttonState)
 
  if (state == 1)//GATE OPENING
   {
-  digitalWrite(output1, HIGH);//SET ACTUATOR DIRECTION TO OPEN pin 7
+  digitalWrite(output1, HIGH);//SET ACTUATOR DIRECTION TO OPEN
+  Serial.println("SET ACTUATOR DIRECTION TO OPEN");
   delay(1000);
-  digitalWrite(output2, HIGH);//SET ACTUATOR POWER ON pin8
+  digitalWrite(output2, HIGH);//SET ACTUATOR POWER ON
+  Serial.println("POWER ON");
   
   currentTime = millis();     //SET OPEN TIME
   lastTime = currentTime;                  
@@ -74,13 +96,28 @@ void gateOperation(int buttonState)
                   
                  currentTime = millis();    
                  timer=currentTime-lastTime;
-                                     
-                int buttonBState = digitalRead(buttonB);    // STOP OPENING IF BUTTON B IS PRESSED
-                      if (buttonBState == HIGH)
+                                        
+                      if (buttonBState == HIGH) // STOP OPENING IF BUTTON B IS PRESSED
                       {
                         Serial.println("Button B pressed while gate opening");
-                       
+                        delay(500);
                         state = 2;
+                        break;
+                      }
+
+                      if (buttonCState == HIGH)
+                      {
+                        Serial.println("Button C pressed while gate opening");
+                        delay(500);
+                        state = 5;
+                        break;
+                      }
+
+                      if (buttonDState == HIGH)
+                      {
+                        Serial.println("Button D pressed while gate opening");
+                        delay(500);
+                        state = 5;
                         break;
                       }
                 }
@@ -96,7 +133,7 @@ void gateOperation(int buttonState)
   else if (state == 2)//GATE CLOSING
   
   {
-  digitalWrite(output1, LOW);//SETTING ACTUATOR DIRECTION TO OPEN
+  digitalWrite(output1, LOW);//SETTING ACTUATOR DIRECTION TO CLOSE
 
   delay(1000);
   
@@ -109,12 +146,28 @@ void gateOperation(int buttonState)
                 {
                  currentTime = millis();     //obecny czas:1000
                  timer=currentTime-lastTime;
-                 int buttonAState = digitalRead(buttonB);
+                 
                       if (buttonAState == HIGH)
                       {
-                        Serial.println("Button A pressed while gate opening");
-                       
+                        Serial.println("Button A pressed while gate closing");
+                        delay(200);
                         state = 1;
+                        break;
+                      }
+
+                      if (buttonCState == HIGH)
+                      {
+                        Serial.println("Button C pressed while gate closing");
+                        delay(200);
+                        state = 5;
+                        break;
+                      }
+
+                      if (buttonDState == HIGH)
+                      {
+                        Serial.println("Button D pressed while gate closing");
+                        delay(200);
+                        state = 5;
                         break;
                       }
                 }
@@ -127,7 +180,7 @@ else if (state == 3)
 {
   digitalWrite(output1, LOW);
   digitalWrite(output2, LOW);
-  delay(2000);
+  delay(300);
   state = 5;
   
 }
@@ -135,30 +188,34 @@ else if (state == 4)
 {
   digitalWrite(output1, LOW);
   digitalWrite(output2, LOW);
-  delay(2000);
+  delay(300);
   state = 5;
 }
 
   else if (state == 5)//IDLE
   
   {
+  Serial.println("STATE 5 IDLE");
   digitalWrite(output1, LOW);
   currentTime = millis();  
   lastTime = currentTime;                  
   timer=currentTime-lastTime;   
-    while(timer<500)            //timer do poprawy bo blokuje program
+  while( buttonAState &&  buttonBState && buttonDState && buttonDState == LOW )  
                 {
-                 unsigned long currentTime = millis();
+                 currentTime = millis();            
                  timer=currentTime-lastTime;
+                 if (timer > 1000)
+                 {
+                  unsigned long czas = timer/1000;
+                  Serial.println(czas);
+                  lastTime = currentTime;
+                 }
+                  
                 }
-    //Serial.println("idle");
+   
 
 
    
-  }
-  else
-  {
-    Serial.println("else idle");
   }
 }
 
